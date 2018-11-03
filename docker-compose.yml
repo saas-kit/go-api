@@ -1,0 +1,85 @@
+version: "3.5"
+
+services:
+
+  api:
+    container_name: "saas_api"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: saas_api
+    environment:
+      HEALTHCHECK_URL: http://0.0.0.0:8080/health
+    ports:
+        - "8080:8080"
+    depends_on:
+      - db
+      - redis
+      - mongodb
+
+  db:
+    container_name: "saas_api_mariadb"
+    image: mariadb
+    volumes:
+      - saas_api_db_data:/var/lib/mysql
+      - ./bootstrap/db.init:/docker-entrypoint-initdb.d
+    ports:
+      - '3306:3306' # it's needed to connect from IDE
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+
+  redis:
+    container_name: "saas_api_redis"
+    image: redis
+    volumes:
+      - saas_api_redis_data:/data
+
+  mongodb:
+    container_name: "saas_api_mongodb"
+    image: mongo
+    volumes:
+      - saas_api_mongodb_data:/data/db
+    environment:
+      STORAGE_ENGINE: wiredTiger
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+
+  pma:
+    container_name: "saas_api_pma"
+    image: phpmyadmin/phpmyadmin
+    environment:
+      MYSQL_USERNAME: root
+      MYSQL_ROOT_PASSWORD: root
+      MAX_UPLOAD: "512M"
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+  minio:
+    container_name: "saas_api_minio"
+    image: minio/minio
+    entrypoint: sh
+    command: -c 'mkdir -p /data/${AWS_BUCKET} && /usr/bin/minio server /data'
+    environment:
+      MINIO_ACCESS_KEY: ${AWS_KEY}
+      MINIO_SECRET_KEY: ${AWS_SECRET}
+    ports:
+      - '9001:9000'
+    volumes:
+      - saas_api_minio_data:/data
+
+  mailcatcher:
+    container_name: "saas_api_mailcatcher"
+    image: schickling/mailcatcher
+    ports:
+      - '1081:1080'
+
+volumes:
+  saas_api_db_data:
+  saas_api_redis_data:
+  saas_api_mongodb_data:
+  saas_api_minio_data:
