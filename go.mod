@@ -1,8 +1,9 @@
 module go-saas-kit
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/jinzhu/configor v0.0.0-20180614024415-4edaf76fe188
+	github.com/gorilla/context v1.1.1 // indirect
+	github.com/gorilla/mux v1.6.2 // indirect
+	github.com/joho/godotenv v1.3.0
+	github.com/julienschmidt/httprouter v1.2.0 // indirect
 	github.com/xujiajun/gorouter v1.0.1
-	gopkg.in/yaml.v2 v2.2.1 // indirect
 )

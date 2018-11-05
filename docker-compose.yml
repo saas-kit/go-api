@@ -4,48 +4,71 @@ services:
 
   api:
     container_name: "saas_api"
+    env_file: .env
     build:
       context: .
       dockerfile: Dockerfile
     image: saas_api
-    environment:
-      HEALTHCHECK_URL: http://0.0.0.0:8080/health
     ports:
-        - "8080:8080"
+        - "${API_PORT?err}:${API_PORT?err}"
     depends_on:
       - db
       - redis
       - mongodb
+    healthcheck:
+      test: ["CMD", "/healthchecker"]
+      start_period: ${HEALTHCHECK_START_PERIOD?err}
+      interval: ${HEALTHCHECK_INTERVAL?err}
+      timeout: ${HEALTHCHECK_TIMEOUT?err}
+      retries: ${HEALTHCHECK_RETRIES?err}
 
   db:
     container_name: "saas_api_mariadb"
     image: mariadb
     volumes:
-      - saas_api_db_data:/var/lib/mysql
+      - db_data:/var/lib/mysql
       - ./bootstrap/db.init:/docker-entrypoint-initdb.d
     ports:
       - '3306:3306' # it's needed to connect from IDE
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD?err}
+      MYSQL_DATABASE: ${DB_DATABASE?err}
+      MYSQL_USER: ${DB_USERNAME?err}
+      MYSQL_PASSWORD: ${DB_PASSWORD?err}
+    healthcheck:
+      test: "/usr/bin/mysql --user=${DB_USERNAME?err} --password=${DB_PASSWORD?err} --execute \"SHOW DATABASES;\""
+      start_period: ${HEALTHCHECK_START_PERIOD?err}
+      interval: ${HEALTHCHECK_INTERVAL?err}
+      timeout: ${HEALTHCHECK_TIMEOUT?err}
+      retries: ${HEALTHCHECK_RETRIES?err}
 
   redis:
     container_name: "saas_api_redis"
     image: redis
     volumes:
-      - saas_api_redis_data:/data
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      start_period: ${HEALTHCHECK_START_PERIOD?err}
+      interval: ${HEALTHCHECK_INTERVAL?err}
+      timeout: ${HEALTHCHECK_TIMEOUT?err}
+      retries: ${HEALTHCHECK_RETRIES?err}
 
   mongodb:
     container_name: "saas_api_mongodb"
     image: mongo
     volumes:
-      - saas_api_mongodb_data:/data/db
+      - mongodb_data:/data/db
     environment:
       STORAGE_ENGINE: wiredTiger
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME?err}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD?err}
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+      start_period: ${HEALTHCHECK_START_PERIOD?err}
+      interval: ${HEALTHCHECK_INTERVAL?err}
+      timeout: ${HEALTHCHECK_TIMEOUT?err}
+      retries: ${HEALTHCHECK_RETRIES?err}
 
   pma:
     container_name: "saas_api_pma"
@@ -65,12 +88,12 @@ services:
     entrypoint: sh
     command: -c 'mkdir -p /data/${AWS_BUCKET} && /usr/bin/minio server /data'
     environment:
-      MINIO_ACCESS_KEY: ${AWS_KEY}
-      MINIO_SECRET_KEY: ${AWS_SECRET}
+      MINIO_ACCESS_KEY: ${AWS_KEY?err}
+      MINIO_SECRET_KEY: ${AWS_SECRET?err}
     ports:
       - '9001:9000'
     volumes:
-      - saas_api_minio_data:/data
+      - minio_data:/data
 
   mailcatcher:
     container_name: "saas_api_mailcatcher"
@@ -79,7 +102,7 @@ services:
       - '1081:1080'
 
 volumes:
-  saas_api_db_data:
-  saas_api_redis_data:
-  saas_api_mongodb_data:
-  saas_api_minio_data:
+  db_data:
+  redis_data:
+  mongodb_data:
+  minio_data:
