@@ -35,7 +35,7 @@ func (s *Server) ListenAndServe() error {
 	// Middlewares
 	// TODO: there are middlewares for test. This part should be rewritten
 	s.router.NotFoundFunc(notFoundFunc)
-	s.router.Use(withLogging, withTracing, withStatusRecord)
+	// s.router.Use(withLogging, withTracing, withStatusRecord)
 
 	// Set up API routes with prefix
 	api := s.router.Group(s.apiVersion)

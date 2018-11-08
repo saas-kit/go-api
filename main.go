@@ -15,6 +15,7 @@ const (
 )
 
 func init() {
+	// debug.SetGCPercent(10000)
 	// Check whether .env config is loaded or not
 	if os.Getenv("APP_NAME") != "" {
 		log.Println("Environment configuration file is already loaded")
