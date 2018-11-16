@@ -2,7 +2,7 @@
 FROM golang:alpine AS container
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh curl ca-certificates
-ARG MODULE_PATH=/go/src/go-saas-kit
+ARG MODULE_PATH=/go/src/saas-kit-api
 WORKDIR $MODULE_PATH
 ENV GO111MODULE=on
 COPY go.mod .
