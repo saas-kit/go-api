@@ -49,5 +49,5 @@ func errorHandler(err error) error {
 	if err, ok := err.(*echo.HTTPError); ok {
 		return NewHTTPError(err.Code, err.Message)
 	}
-	return NewHTTPError(http.StatusUnauthorized, err)
+	return NewHTTPError(http.StatusUnauthorized, err.Error())
 }
