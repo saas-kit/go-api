@@ -1,21 +1,18 @@
 package main
 
 import (
-	"fmt"
-	"go-saas-kit/delivery/http"
 	"log"
 	"os"
+	"saas-kit-api/delivery/http"
 
 	"github.com/joho/godotenv"
 )
 
-const (
-	apiPort    string = "API_PORT"
-	apiVersion string = "API_VERSION"
-)
-
 func init() {
+	// This option can increase application performance via decrease number of the GC starts
+	// See full documentation to detail https://golang.org/pkg/runtime/debug/#SetGCPercent
 	// debug.SetGCPercent(10000)
+
 	// Check whether .env config is loaded or not
 	if os.Getenv("APP_NAME") != "" {
 		log.Println("Environment configuration file is already loaded")
@@ -30,6 +27,6 @@ func init() {
 
 func main() {
 	// Run web server via HTTP
-	httpServer := http.NewServer(fmt.Sprintf(":%s", os.Getenv(apiPort)), fmt.Sprintf("v%s", os.Getenv(apiVersion)))
+	httpServer := http.NewServer(config{})
 	log.Fatal(httpServer.ListenAndServe())
 }
