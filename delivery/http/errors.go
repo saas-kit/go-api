@@ -22,12 +22,19 @@ func (e *Error) Error() string {
 }
 
 // NewHTTPError halper to return formated HTTP error object
-func NewHTTPError(code int, err interface{}) *Error {
-	return &Error{
-		Code:   code,
-		Title:  http.StatusText(code),
-		Detail: err,
+func NewHTTPError(code int, message ...interface{}) *Error {
+	e := &Error{
+		Code:  code,
+		Title: http.StatusText(code),
 	}
+	if counter := len(message); counter > 0 {
+		if counter == 1 {
+			e.Detail = message[0]
+		} else {
+			e.Detail = message
+		}
+	}
+	return e
 }
 
 // Default HTTP errors handler
