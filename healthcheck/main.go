@@ -6,8 +6,7 @@ import (
 )
 
 func main() {
-	_, err := http.Get(os.Getenv("HEALTHCHECK_URL"))
-	if err != nil {
+	if _, err := http.Get(os.Getenv("HEALTHCHECK_URL")); err != nil {
 		os.Exit(1)
 	}
 }
