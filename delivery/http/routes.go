@@ -9,8 +9,10 @@ import (
 
 // Default API routes
 func setupRoutes(r *echo.Group, cnf routesConfig) {
+	r.Use(JSONHeadersMiddleware)
 	r.GET("/test", testHandler)
-	r.POST("/post", postHandler, JWT(cnf.JWTSigningKey()))
+	r.GET("/restricted", testHandler, JWT(cnf.JWTSigningKey()))
+	r.POST("/validation", postHandler)
 }
 
 func testHandler(c echo.Context) error {
