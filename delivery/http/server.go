@@ -50,10 +50,11 @@ func NewServer(cnf serverConfig) *Server {
 	router.Use(middleware.CORS())
 	router.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		Skipper:               middleware.DefaultSkipper,
-		XSSProtection:         "1; mode=block",
-		ContentTypeNosniff:    "nosniff",
-		XFrameOptions:         "DENY",
 		ContentSecurityPolicy: "default-src 'self'",
+		ContentTypeNosniff:    "nosniff",
+		HSTSMaxAge:            31536000, // 1 year
+		XSSProtection:         "1; mode=block",
+		XFrameOptions:         "DENY",
 	}))
 	router.Use(middleware.BodyLimit("2M"))
 	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{
