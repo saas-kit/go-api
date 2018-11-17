@@ -48,7 +48,8 @@ func defaultHTTPErrorHandler(err error, c echo.Context) {
 	} else if de, ok := err.(*Error); ok {
 		e = de
 	} else {
-		e = NewHTTPError(http.StatusInternalServerError, err)
+		c.Logger().Error(err)
+		e = NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	if err := c.JSON(e.Code, map[string]interface{}{"error": e}); err != nil {
 		panic(err)
