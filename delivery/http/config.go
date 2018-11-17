@@ -19,5 +19,6 @@ type serverConfig interface {
 
 // Default routes config interface
 type routesConfig interface {
-	JWTSigningKey() string
+	JWTSigningKey() []byte
+	JWTTTL() int64
 }

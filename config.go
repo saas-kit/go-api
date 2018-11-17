@@ -100,6 +100,15 @@ func (c config) AppName() string {
 }
 
 // JWTSigningKey returns JWT signing key
-func (c config) JWTSigningKey() string {
-	return os.Getenv("JWT_SECRET")
+func (c config) JWTSigningKey() []byte {
+	return []byte(os.Getenv("JWT_SECRET"))
+}
+
+// JWTTTL returns JWT life time in seconds
+func (c config) JWTTTL() int64 {
+	lvl, err := strconv.Atoi(os.Getenv("JWT_TTL"))
+	if err != nil {
+		return 1
+	}
+	return int64(lvl)
 }

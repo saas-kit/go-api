@@ -9,17 +9,31 @@ import (
 
 // Default API routes
 func setupRoutes(r *echo.Group, cnf routesConfig) {
+	jwt := JWT{cnf.JWTSigningKey(), cnf.JWTTTL()}
 	r.Use(JSONHeadersMiddleware)
-	r.GET("/test", testHandler)
-	r.GET("/restricted", testHandler, JWT(cnf.JWTSigningKey()))
+	r.GET("/test", testHandler(jwt))
+	r.GET("/restricted", testHandler(jwt), jwt.Middleware())
 	r.POST("/validation", postHandler)
 }
 
-func testHandler(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":      http.StatusText(http.StatusOK),
-		"server_time": time.Now(),
-	})
+func testHandler(jwt JWT) echo.HandlerFunc {
+	user := DefaultUserJWTClaims{
+		ID:        "userid",
+		Name:      "John Doe",
+		Role:      "customer",
+		Confirmed: true,
+	}
+	return func(c echo.Context) error {
+		token, err := jwt.NewToken(jwt.NewClaims(user))
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"status":      http.StatusText(http.StatusOK),
+			"server_time": time.Now(),
+			"jwt":         token,
+		})
+	}
 }
 
 // UserRequest struct
