@@ -9,6 +9,7 @@ require (
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mattn/go-runewidth v0.0.3 // indirect
 	github.com/olekukonko/tablewriter v0.0.1
+	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.2.2 // indirect
 	github.com/thedevsaddam/govalidator v1.9.3
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
