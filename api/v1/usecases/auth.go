@@ -2,9 +2,10 @@ package usecases
 
 import (
 	"errors"
-	"saas-kit-api/domain"
-	"saas-kit-api/signeddata"
+	"saas-kit-api/pkg/signeddata"
 	"time"
+
+	"saas-kit-api/api/v1/domain"
 )
 
 const (
@@ -44,6 +45,30 @@ type (
 		OriginalUser *User `json:"original_user,omitempty"`
 	}
 )
+
+// NewAuthInterfactor is a factory function,
+// returns a new instance of the AuthInteractor
+func NewAuthInterfactor(
+	userRepo domain.UserRepository,
+	invRepo domain.InvitationRepository,
+	projRepo domain.ProjectRepository,
+	notification domain.UserNotification,
+	logger Logger,
+	developers map[string]struct{},
+	signingKey string,
+	signedDataTTL int64,
+) *AuthInteractor {
+	return &AuthInteractor{
+		userRepo:      userRepo,
+		invRepo:       invRepo,
+		projRepo:      projRepo,
+		notification:  notification,
+		logger:        logger,
+		developers:    developers,
+		signingKey:    signingKey,
+		signedDataTTL: signedDataTTL,
+	}
+}
 
 // SignIn use case handler
 func (i *AuthInteractor) SignIn(email, password string) (*User, error) {

@@ -1,4 +1,4 @@
-package http
+package server
 
 import (
 	"net/http"
@@ -20,15 +20,11 @@ type (
 	Server struct {
 		router *echo.Echo
 		config serverConfig
-		routes map[string]RoutesFunc
 	}
-
-	// RoutesFunc type of function to add new custom routes
-	RoutesFunc func(*echo.Group)
 )
 
-// NewServer func returns a new instance of the Server structure
-func NewServer(cnf serverConfig) *Server {
+// New func returns a new instance of the Server structure
+func New(cnf serverConfig) *Server {
 	router := echo.New()
 	router.Debug = cnf.DebugMode()
 
@@ -58,7 +54,7 @@ func NewServer(cnf serverConfig) *Server {
 	}))
 	router.Use(middleware.BodyLimit("2M"))
 	router.Use(middleware.GzipWithConfig(middleware.GzipConfig{
-		Level: cnf.LogLevel(),
+		Level: cnf.GzipLevel(),
 	}))
 
 	if cnf.AutoTLSMode() {
@@ -74,6 +70,9 @@ func NewServer(cnf serverConfig) *Server {
 		router.Use(middleware.NonWWWRedirect())
 	}
 
+	// Application health check endpoint
+	router.GET("/health", healthCheckHandler)
+
 	// Init server structure
 	return &Server{
 		router: router,
@@ -85,17 +84,6 @@ func NewServer(cnf serverConfig) *Server {
 func (s *Server) ListenAndServe() error {
 	// alias of the Server config property
 	cnf := s.config
-
-	// Application health check endpoint
-	s.router.GET("/health", healthCheckHandler)
-
-	// Setup default routes
-	setupRoutes(s.router.Group(cnf.APIVersion()), cnf)
-
-	// Set up custom routes
-	for group, routeFunc := range s.routes {
-		routeFunc(s.router.Group(group))
-	}
 
 	// Print all registered routes
 	s.printRoutes()
@@ -114,9 +102,9 @@ func (s *Server) ListenAndServe() error {
 	return s.router.Start(cnf.ListenPort())
 }
 
-// AddRoutes adds new routes
-func (s *Server) AddRoutes(group string, routes RoutesFunc) {
-	s.routes[group] = routes
+// Router returns the API router engine instance
+func (s *Server) Router() *echo.Echo {
+	return s.router
 }
 
 // PrintRoutes is a function to print registered routes
