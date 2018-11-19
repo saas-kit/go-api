@@ -1,13 +1,5 @@
 package domain
 
-// Predefined user roles in project
-const (
-	RoleOwner  string = "owner"
-	RoleAdmin  string = "admin"
-	RoleRWUser string = "rw"
-	RoleROUser string = "ro"
-)
-
 type (
 	// ProjectRepository interface
 	ProjectRepository interface {
@@ -40,7 +32,4 @@ type (
 		User
 		Role Role `json:"role"`
 	}
-
-	// Role type
-	Role string
 )
