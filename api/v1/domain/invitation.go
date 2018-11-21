@@ -19,12 +19,11 @@ type (
 	// InvitationRepository interface
 	InvitationRepository interface {
 		GetByID(id string) (Invitation, error)
-		GetByEmail(email string) (Invitation, error)
-		GetByProject(projectID string) (Invitation, error)
-		GetAll() ([]Invitation, error)
+		GetByEmail(email string) ([]Invitation, error)
+		GetByProject(projectID string) ([]Invitation, error)
+		GetList(limit, offset int) ([]Invitation, error)
 		Store(*Invitation) error
 		Update(*Invitation) error
-		Patch(id string, data map[string]interface{}) error
 		Delete(id string) error
 		Confirm(id string) error
 	}

@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/labstack/gommon/random"
 	"github.com/satori/go.uuid"
@@ -12,13 +13,12 @@ import (
 type (
 	// UserRepository interface
 	UserRepository interface {
-		GetByID(id string) (*User, error)
-		GetByEmail(email string) (*User, error)
-		GetAll() ([]*User, error)
+		GetByID(id string) (User, error)
+		GetByEmail(email string) (User, error)
+		GetList(limit, offset int) ([]User, error)
 		Store(*User) error
 		Update(*User) error
 		UpdateResetTokenTime(id string) error
-		Patch(id string, data map[string]interface{}) error
 		Delete(id string) error
 	}
 
@@ -35,9 +35,10 @@ type (
 		LastName   string `json:"last_name"`
 		UserpicURL string `json:"userpic"`
 
-		Email    string `json:"email"`
-		Password string `json:"-"`
-		Salt     string `json:"-"`
+		Email        string     `json:"email"`
+		Password     string     `json:"-"`
+		Salt         string     `json:"-"`
+		ResetTokenAt *time.Time `json:"-"`
 
 		Confirmed bool `json:"confirmed"`
 		Disabled  bool `json:"disabled"`
@@ -72,15 +73,15 @@ func (u *User) SetPassword(password string) error {
 }
 
 // NewUser function returns a new User object with filled data
-func NewUser(email, password, firstName, lastName string) (*User, error) {
-	user := &User{
+func NewUser(email, password, firstName, lastName string) (User, error) {
+	user := User{
 		ID:        uuid.NewV1().String(),
 		Email:     email,
 		FirstName: firstName,
 		LastName:  lastName,
 	}
 	if err := user.SetPassword(password); err != nil {
-		return nil, err
+		return User{}, err
 	}
 	return user, nil
 }

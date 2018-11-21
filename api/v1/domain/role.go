@@ -5,10 +5,11 @@ type Role string
 
 // Predefined user roles in project
 const (
-	RoleOwner  Role = "owner"
-	RoleAdmin  Role = "admin"
-	RoleRWUser Role = "rw"
-	RoleROUser Role = "ro"
+	RoleOwner     Role = "owner"
+	RoleAdmin     Role = "admin"
+	RoleRWUser    Role = "rw"
+	RoleROUser    Role = "ro"
+	RoleUndefined Role = ""
 )
 
 // IsValid determines if role is valid
