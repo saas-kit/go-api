@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/labstack/echo"
-
 	"saas-kit-api/api/v1/usecases"
+
+	"github.com/labstack/echo"
 )
 
 type (

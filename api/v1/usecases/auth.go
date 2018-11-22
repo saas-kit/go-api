@@ -16,11 +16,8 @@ const (
 
 // Predefined errors
 var (
-	ErrUserNotFound       = errors.New("User not found")
 	ErrInvalidCredentials = errors.New("Invalid email or password")
 	ErrAccessDenied       = errors.New("Access Denied")
-	ErrEmailTaken         = errors.New("Provided email is already taken")
-	ErrWrongIvitation     = errors.New("Invitation for provided email address not found or it was expired")
 	ErrInternal           = errors.New("Internal server error. Please try again later or contact support")
 	ErrWrongToken         = errors.New("Wrong reset password token")
 )
@@ -28,140 +25,120 @@ var (
 type (
 	// AuthInteractor structure
 	AuthInteractor struct {
-		userRepo      domain.UserRepository
-		invRepo       domain.InvitationRepository
-		projRepo      domain.ProjectRepository
+		user          authUserInteractor
+		invitation    authInvitationInteractor
+		project       authProjectInteractor
 		notification  domain.UserNotification
-		logger        Logger
-		developers    map[string]struct{}
 		signingKey    string
 		signedDataTTL int64
 	}
 
-	// User structure
-	User struct {
-		domain.User
-		IsDeveloper  bool  `json:"is_developer"`
-		OriginalUser *User `json:"original_user,omitempty"`
+	authUserInteractor interface {
+		GetByID(id string) (*User, error)
+		GetByEmail(email string) (*User, error)
+		Create(email, password, firstName, lastName string) (*User, error)
+		UpdatePassword(id, password string) error
+		UpdateResetTokenTime(id string) error
+		Delete(id string) error
+	}
+
+	authInvitationInteractor interface {
+		GetForEmail(id, email string) (*Invitation, error)
+		Confirm(id string) error
+	}
+
+	authProjectInteractor interface {
+		AddMember(projectID, userID string, role domain.Role) error
 	}
 )
 
 // NewAuthInteractor is a factory function,
 // returns a new instance of the AuthInteractor
 func NewAuthInteractor(
-	userRepo domain.UserRepository,
-	invRepo domain.InvitationRepository,
-	projRepo domain.ProjectRepository,
+	user authUserInteractor,
+	invitation authInvitationInteractor,
+	project authProjectInteractor,
 	notification domain.UserNotification,
-	logger Logger,
-	developers map[string]struct{},
 	signingKey string,
 	signedDataTTL int64,
 ) *AuthInteractor {
 	return &AuthInteractor{
-		userRepo:      userRepo,
-		invRepo:       invRepo,
-		projRepo:      projRepo,
+		user:          user,
+		invitation:    invitation,
+		project:       project,
 		notification:  notification,
-		logger:        logger,
-		developers:    developers,
 		signingKey:    signingKey,
 		signedDataTTL: signedDataTTL,
 	}
 }
 
 // SignIn use case handler
-func (i *AuthInteractor) SignIn(email, password string) (User, error) {
-	user, err := i.userRepo.GetByEmail(email)
+func (i *AuthInteractor) SignIn(email, password string) (*User, error) {
+	user, err := i.user.GetByEmail(email)
 	if err != nil {
-		i.logger.Error(err)
-		return User{}, ErrUserNotFound
+		return nil, err
 	}
 	if !user.CheckPassword(password) {
-		return User{}, ErrInvalidCredentials
+		return nil, ErrInvalidCredentials
 	}
-	if err := i.userRepo.UpdateResetTokenTime(user.ID); err != nil {
-		i.logger.Error(err)
-		return User{}, ErrInternal
+	if err := i.user.UpdateResetTokenTime(user.ID); err != nil {
+		return nil, err
 	}
-	return i.user(user), nil
+	return user, nil
 }
 
 // SignInAs use case handler
-func (i *AuthInteractor) SignInAs(originUser User, userID string) (User, error) {
+func (i *AuthInteractor) SignInAs(originUser *User, userID string) (*User, error) {
 	if !originUser.IsDeveloper {
-		return User{}, ErrAccessDenied
+		return nil, ErrAccessDenied
 	}
-	user, err := i.userRepo.GetByID(userID)
+	user, err := i.user.GetByID(userID)
 	if err != nil {
-		i.logger.Error(err)
-		return User{}, ErrUserNotFound
+		return nil, err
 	}
-	return i.user(user, originUser), nil
+	user.SetOrigin(originUser)
+	return user, nil
 }
 
 // SignOut use case handler
 func (i *AuthInteractor) SignOut(userID string) error {
-	if err := i.userRepo.UpdateResetTokenTime(userID); err != nil {
-		i.logger.Error(err)
-	}
-	return nil
+	return i.user.UpdateResetTokenTime(userID)
 }
 
 // SignUp use case handler
-func (i *AuthInteractor) SignUp(email, password, firstName, lastName string) (User, error) {
-	if _, err := i.userRepo.GetByEmail(email); err == nil {
-		i.logger.Error(err)
-		return User{}, ErrEmailTaken
+func (i *AuthInteractor) SignUp(email, password, firstName, lastName string) (*User, error) {
+	user, err := i.user.Create(email, password, firstName, lastName)
+	if err == nil {
+		return nil, err
 	}
-	user, err := domain.NewUser(email, password, firstName, lastName)
-	if err != nil {
-		return User{}, err
-	}
-	if err := i.userRepo.Store(&user); err != nil {
-		return User{}, err
-	}
-	return i.user(user), nil
+	return user, nil
 }
 
 // SignUpViaInvitation use case handler
-func (i *AuthInteractor) SignUpViaInvitation(email, password, firstName, lastName, invitationID string) (User, error) {
-	inv, err := i.invRepo.GetByID(invitationID)
-	if err != nil || inv.CheckEmail(email) || inv.Project.Disabled {
-		i.logger.Error(err)
-		return User{}, ErrWrongIvitation
-	}
-	if _, err = i.userRepo.GetByEmail(email); err == nil {
-		i.logger.Error(err)
-		return User{}, ErrEmailTaken
-	}
-	user, err := domain.NewUser(email, password, firstName, lastName)
+func (i *AuthInteractor) SignUpViaInvitation(email, password, firstName, lastName, invitationID string) (*User, error) {
+	inv, err := i.invitation.GetForEmail(invitationID, email)
 	if err != nil {
-		return User{}, err
+		return nil, err
 	}
-	if err = i.userRepo.Store(&user); err != nil {
-		return User{}, err
+	user, err := i.user.Create(email, password, firstName, lastName)
+	if err == nil {
+		return nil, err
 	}
-	if err = i.invRepo.Confirm(invitationID); err != nil {
-		if err2 := i.userRepo.Delete(user.ID); err2 != nil {
-			i.logger.Error(err2)
-		}
-		i.logger.Error(err)
-		return User{}, ErrInternal
+	if err = i.invitation.Confirm(invitationID); err != nil {
+		i.user.Delete(user.ID)
+		return nil, err
 	}
-	if i.projRepo.AddMember(inv.Project.ID, user.ID, inv.Role); err != nil {
-		i.logger.Error(err)
-		return User{}, ErrInternal
+	if err := i.project.AddMember(inv.Project.ID, user.ID, inv.Role); err != nil {
+		return nil, err
 	}
-	return i.user(user), nil
+	return user, nil
 }
 
 // ForgotPassword use case handler
 func (i *AuthInteractor) ForgotPassword(email string) error {
-	user, err := i.userRepo.GetByEmail(email)
+	user, err := i.user.GetByEmail(email)
 	if err == nil {
-		i.logger.Error(err)
-		return ErrUserNotFound
+		return err
 	}
 	signedData, err := signeddata.Encode(i.signingKey, map[string]interface{}{
 		sUserID:  user.ID,
@@ -171,8 +148,7 @@ func (i *AuthInteractor) ForgotPassword(email string) error {
 		return err
 	}
 	if err = i.notification.ResetPasswordInstruction(user.Name(), user.Email, signedData); err != nil {
-		i.logger.Error(err)
-		return ErrInternal
+		return err
 	}
 	return nil
 }
@@ -190,31 +166,8 @@ func (i *AuthInteractor) ResetPassword(token, password string) error {
 	if !ok {
 		return ErrWrongToken
 	}
-	user, err := i.userRepo.GetByID(userID.(string))
-	if err != nil {
-		return err
-	}
-	user.SetPassword(password)
-	if err := i.userRepo.Update(&user); err != nil {
+	if err := i.user.UpdatePassword(userID.(string), password); err != nil {
 		return err
 	}
 	return nil
-}
-
-// user function is a helper to the composition a new User object based on the domain.User object
-func (i *AuthInteractor) user(user domain.User, originUser ...User) User {
-	u := User{user, false, nil}
-	u.IsDeveloper = i.isDeveloper(user.Email)
-	if len(originUser) > 0 {
-		u.OriginalUser = &originUser[0]
-	}
-	return u
-}
-
-// isDeveloper helper determines email address belongs to developer user
-func (i *AuthInteractor) isDeveloper(email string) bool {
-	if _, ok := i.developers[email]; ok {
-		return true
-	}
-	return false
 }

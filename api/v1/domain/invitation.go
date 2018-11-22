@@ -33,3 +33,8 @@ type (
 func (i *Invitation) CheckEmail(email string) bool {
 	return strings.ToLower(email) == strings.ToLower(i.Email)
 }
+
+// IsValid checks if an invitation is valid
+func (i *Invitation) IsValid(email string) bool {
+	return i.CheckEmail(email) && !i.Project.Disabled
+}
