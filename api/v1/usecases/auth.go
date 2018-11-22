@@ -18,7 +18,6 @@ const (
 var (
 	ErrInvalidCredentials = errors.New("Invalid email or password")
 	ErrAccessDenied       = errors.New("Access Denied")
-	ErrInternal           = errors.New("Internal server error. Please try again later or contact support")
 	ErrWrongToken         = errors.New("Wrong reset password token")
 )
 
