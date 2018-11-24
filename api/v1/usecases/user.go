@@ -15,7 +15,7 @@ var (
 type (
 	// User structure
 	User struct {
-		domain.User
+		*domain.User
 		IsDeveloper  bool  `json:"is_developer"`
 		OriginalUser *User `json:"original_user,omitempty"`
 	}
@@ -47,7 +47,7 @@ func (i *UserInteractor) GetByID(id string) (*User, error) {
 	if err != nil {
 		return nil, ErrUserNotFound
 	}
-	return i.user(user), nil
+	return i.wrap(user), nil
 }
 
 // GetByEmail usecase handler
@@ -56,7 +56,7 @@ func (i *UserInteractor) GetByEmail(email string) (*User, error) {
 	if err != nil {
 		return nil, ErrUserNotFound
 	}
-	return i.user(user), nil
+	return i.wrap(user), nil
 }
 
 // Create new user
@@ -68,10 +68,10 @@ func (i *UserInteractor) Create(email, password, firstName, lastName string) (*U
 	if err != nil {
 		return nil, err
 	}
-	if err := i.userRepo.Store(&user); err != nil {
+	if err := i.userRepo.Store(user); err != nil {
 		return nil, err
 	}
-	return i.user(user), nil
+	return i.wrap(user), nil
 }
 
 // UpdatePassword usecase handler
@@ -81,7 +81,7 @@ func (i *UserInteractor) UpdatePassword(id, password string) error {
 		return err
 	}
 	user.SetPassword(password)
-	if err := i.userRepo.Update(&user); err != nil {
+	if err := i.userRepo.Update(user); err != nil {
 		return err
 	}
 	return nil
@@ -101,7 +101,7 @@ func (i *UserInteractor) Delete(id string) error {
 }
 
 // user function is a helper to the composition a new User object based on the domain.User object
-func (i *UserInteractor) user(user domain.User, originUser ...*User) *User {
+func (i *UserInteractor) wrap(user *domain.User, originUser ...*User) *User {
 	u := &User{user, false, nil}
 	u.IsDeveloper = i.isDeveloper(user.Email)
 	if len(originUser) > 0 {

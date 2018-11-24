@@ -28,13 +28,13 @@ func NewInvitationsRepository(db *sqlx.DB) *InvitationsRepository {
 }
 
 // GetByID retrieve invitations by id
-func (r *InvitationsRepository) GetByID(id string) (domain.Invitation, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id = ? AND deleted_at is NULL LIMIT 1;", invitationTableName)
+func (r *InvitationsRepository) GetByID(id string) (*domain.Invitation, error) {
+	query := fmt.Sprintf("SELECT * FROM %s WHERE id = ? LIMIT 1;", invitationTableName)
 	invitation := domain.Invitation{}
 	if err := r.db.Get(&invitation, query, id); err != nil {
-		return domain.Invitation{}, err
+		return nil, err
 	}
-	return invitation, nil
+	return &invitation, nil
 }
 
 // GetByEmail retrieve invitations by email
@@ -57,14 +57,14 @@ func (r *InvitationsRepository) GetByProject(projectID string) ([]domain.Invitat
 	return invitations, nil
 }
 
-// GetList of invitationss
+// GetList of invitations
 func (r *InvitationsRepository) GetList(limit, offset int) ([]domain.Invitation, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE deleted_at is NULL LIMIT ?, ? ;", invitationTableName)
-	invitationss := make([]domain.Invitation, 0)
-	if err := r.db.Select(&invitationss, query, offset, limit); err != nil && err != sql.ErrNoRows {
+	query := fmt.Sprintf("SELECT * FROM %s LIMIT ?, ? ;", invitationTableName)
+	invitations := make([]domain.Invitation, 0)
+	if err := r.db.Select(&invitations, query, offset, limit); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	return invitationss, nil
+	return invitations, nil
 }
 
 // Store new invitations
@@ -88,7 +88,7 @@ func (r *InvitationsRepository) Update(invitation *domain.Invitation) error {
 
 // Delete record
 func (r *InvitationsRepository) Delete(id string) error {
-	query := fmt.Sprintf("UPDATE %s SET `deleted_at`=? WHERE id=?;", invitationTableName)
+	query := fmt.Sprintf("DELETE FROM %s WHERE id=?;", invitationTableName)
 	if _, err := r.db.Exec(query, time.Now().Unix(), id); err != nil {
 		return err
 	}

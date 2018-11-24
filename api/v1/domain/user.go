@@ -13,8 +13,8 @@ import (
 type (
 	// UserRepository interface
 	UserRepository interface {
-		GetByID(id string) (User, error)
-		GetByEmail(email string) (User, error)
+		GetByID(id string) (*User, error)
+		GetByEmail(email string) (*User, error)
 		GetList(limit, offset int) ([]User, error)
 		Store(*User) error
 		Update(*User) error
@@ -73,15 +73,15 @@ func (u *User) SetPassword(password string) error {
 }
 
 // NewUser function returns a new User object with filled data
-func NewUser(email, password, firstName, lastName string) (User, error) {
-	user := User{
+func NewUser(email, password, firstName, lastName string) (*User, error) {
+	user := &User{
 		ID:        uuid.NewV1().String(),
 		Email:     email,
 		FirstName: firstName,
 		LastName:  lastName,
 	}
 	if err := user.SetPassword(password); err != nil {
-		return User{}, err
+		return nil, err
 	}
 	return user, nil
 }

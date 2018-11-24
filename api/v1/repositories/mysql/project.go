@@ -53,18 +53,18 @@ func NewProjectRepository(db *sqlx.DB, ur userRepository) *ProjectRepository {
 }
 
 // GetByID retrieve project by id
-func (r *ProjectRepository) GetByID(id string) (domain.Project, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id = ? AND deleted_at is NULL LIMIT 1;", projectTableName)
+func (r *ProjectRepository) GetByID(id string) (*domain.Project, error) {
+	query := fmt.Sprintf("SELECT * FROM %s WHERE id = ? LIMIT 1;", projectTableName)
 	project := domain.Project{}
 	if err := r.db.Get(&project, query, id); err != nil {
-		return domain.Project{}, err
+		return nil, err
 	}
-	return project, nil
+	return &project, nil
 }
 
 // GetByOwnerID retrieve project by owner id
 func (r *ProjectRepository) GetByOwnerID(ownerID string) ([]domain.Project, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id IN (SELECT project_id FROM %s WHERE role = ? AND user_id = ? AND disabled = 0) AND deleted_at is NULL;", projectTableName, membersTableName)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE id IN (SELECT project_id FROM %s WHERE role = ? AND user_id = ? AND disabled = 0);", projectTableName, membersTableName)
 	projects := make([]domain.Project, 0)
 	if err := r.db.Select(&projects, query, domain.RoleOwner.String(), ownerID); err != nil && err != sql.ErrNoRows {
 		return nil, err
@@ -74,7 +74,7 @@ func (r *ProjectRepository) GetByOwnerID(ownerID string) ([]domain.Project, erro
 
 // GetByMemberID retrieve project by member id
 func (r *ProjectRepository) GetByMemberID(memberID string) ([]domain.Project, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id IN (SELECT project_id FROM %s WHERE user_id = ? AND disabled = 0) AND deleted_at is NULL;", projectTableName, membersTableName)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE id IN (SELECT project_id FROM %s WHERE user_id = ? AND disabled = 0);", projectTableName, membersTableName)
 	projects := make([]domain.Project, 0)
 	if err := r.db.Select(&projects, query, memberID); err != nil && err != sql.ErrNoRows {
 		return nil, err
@@ -84,7 +84,7 @@ func (r *ProjectRepository) GetByMemberID(memberID string) ([]domain.Project, er
 
 // GetList of projects
 func (r *ProjectRepository) GetList(limit, offset int) ([]domain.Project, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE deleted_at is NULL LIMIT ?, ?;", projectTableName)
+	query := fmt.Sprintf("SELECT * FROM %s LIMIT ?, ?;", projectTableName)
 	projects := make([]domain.Project, 0)
 	if err := r.db.Select(&projects, query, offset, limit); err != nil && err != sql.ErrNoRows {
 		return nil, err
@@ -129,7 +129,7 @@ func (r *ProjectRepository) Update(project *domain.Project) error {
 
 // Delete record
 func (r *ProjectRepository) Delete(id string) error {
-	query := fmt.Sprintf("UPDATE %s SET `deleted_at`=? WHERE id=?;", projectTableName)
+	query := fmt.Sprintf("DELETE FROM %s WHERE id=?;", projectTableName)
 	if _, err := r.db.Exec(query, time.Now().Unix(), id); err != nil {
 		return err
 	}

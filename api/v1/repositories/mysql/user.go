@@ -28,28 +28,28 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 }
 
 // GetByID retrieve user by id
-func (r *UserRepository) GetByID(id string) (domain.User, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id = ? AND deleted_at is NULL LIMIT 1;", usersTableName)
+func (r *UserRepository) GetByID(id string) (*domain.User, error) {
+	query := fmt.Sprintf("SELECT * FROM %s WHERE id = ? LIMIT 1;", usersTableName)
 	user := domain.User{}
 	if err := r.db.Get(&user, query, id); err != nil {
-		return domain.User{}, err
+		return nil, err
 	}
-	return user, nil
+	return &user, nil
 }
 
 // GetByEmail retrieve user by email
-func (r *UserRepository) GetByEmail(email string) (domain.User, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE email = ? AND deleted_at is NULL LIMIT 1;", usersTableName)
+func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
+	query := fmt.Sprintf("SELECT * FROM %s WHERE email = ? LIMIT 1;", usersTableName)
 	user := domain.User{}
 	if err := r.db.Get(&user, query, email); err != nil {
-		return domain.User{}, err
+		return nil, err
 	}
-	return user, nil
+	return &user, nil
 }
 
 // GetList of users
 func (r *UserRepository) GetList(limit, offset int) ([]domain.User, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE deleted_at is NULL LIMIT ?, ? ;", usersTableName)
+	query := fmt.Sprintf("SELECT * FROM %s LIMIT ?, ? ;", usersTableName)
 	users := make([]domain.User, 0)
 	if err := r.db.Select(&users, query, offset, limit); err != nil && err != sql.ErrNoRows {
 		return nil, err
@@ -59,7 +59,7 @@ func (r *UserRepository) GetList(limit, offset int) ([]domain.User, error) {
 
 // GetUsersListByIDs returns users list by given ids
 func (r *UserRepository) GetUsersListByIDs(ids []string) ([]domain.User, error) {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id IN (?) deleted_at is NULL;", usersTableName)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE id IN (?);", usersTableName)
 	query, args, err := sqlx.In(query, ids)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (r *UserRepository) UpdateResetTokenTime(id string) error {
 
 // Delete record
 func (r *UserRepository) Delete(id string) error {
-	query := fmt.Sprintf("UPDATE %s SET `deleted_at`=? WHERE id=?;", usersTableName)
+	query := fmt.Sprintf("DELETE FROM %s WHERE id=?;", usersTableName)
 	if _, err := r.db.Exec(query, time.Now().Unix(), id); err != nil {
 		return err
 	}

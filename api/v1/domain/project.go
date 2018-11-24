@@ -3,7 +3,7 @@ package domain
 type (
 	// ProjectRepository interface
 	ProjectRepository interface {
-		GetByID(id string) (Project, error)
+		GetByID(id string) (*Project, error)
 		GetByOwnerID(id string) ([]Project, error)
 		GetByMemberID(id string) ([]Project, error)
 		GetList(limit, offset int) ([]Project, error)
