@@ -16,11 +16,8 @@ qa:
 	gometalinter \
 	    --vendor \
 	    --deadline=60s \
-	    --exclude="composite literal uses unkeyed fields" \
-	    --exclude="should have comment or be unexported" \
-	    --exclude="Errors unhandled" \
 			--cyclo-over=5 \
-	    ./...
+	    ./app/user/...
 	go-cleanarch.v1 -ignore-tests
 
 test:
