@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -17,10 +17,16 @@ const (
 	logFatalLevel
 )
 
-type config struct{}
+// New config from .env file
+func New() *Config {
+	return &Config{}
+}
+
+// Config structure
+type Config struct{}
 
 // ListenPort returns application port
-func (c config) ListenPort() string {
+func (c Config) ListenPort() string {
 	port := os.Getenv("API_PORT")
 	if port == "" {
 		port = "8080"
@@ -29,12 +35,12 @@ func (c config) ListenPort() string {
 }
 
 // APIVersion returns current API version
-func (c config) APIVersion() string {
+func (c Config) APIVersion() string {
 	return fmt.Sprintf("v%s", os.Getenv("API_VERSION"))
 }
 
 // DebugMode determines whether debug mode is enabled or not
-func (c config) DebugMode() bool {
+func (c Config) DebugMode() bool {
 	mode, err := strconv.ParseBool(os.Getenv("APP_DEBUG"))
 	if err != nil {
 		return false
@@ -43,7 +49,7 @@ func (c config) DebugMode() bool {
 }
 
 // AutoTLSMode says to use authogenerated LetsEncrypt certificate
-func (c config) AutoTLSMode() bool {
+func (c Config) AutoTLSMode() bool {
 	mode, err := strconv.ParseBool(os.Getenv("TLS_AUTO"))
 	if err != nil {
 		return false
@@ -52,22 +58,22 @@ func (c config) AutoTLSMode() bool {
 }
 
 // CrtDir returns path to store generated LetsEncrypt certificate
-func (c config) CrtDir() string {
+func (c Config) CrtDir() string {
 	return os.Getenv("TLS_DIR")
 }
 
 // CustomCrtPath returns path to custom TLS certificate
-func (c config) CustomCrtPath() string {
+func (c Config) CustomCrtPath() string {
 	return os.Getenv("TLS_CRT_PATH")
 }
 
 // CustomCrtKeyPath returns path to custom TLS certificate key
-func (c config) CustomCrtKeyPath() string {
+func (c Config) CustomCrtKeyPath() string {
 	return os.Getenv("TLS_KEY_PATH")
 }
 
 // GzipLevel func returns response gzip level
-func (c config) GzipLevel() int {
+func (c Config) GzipLevel() int {
 	lvl, err := strconv.Atoi(os.Getenv("GZIP_LEVEL"))
 	if err != nil {
 		return -1
@@ -76,7 +82,7 @@ func (c config) GzipLevel() int {
 }
 
 // LogLevel returns logs level
-func (c config) LogLevel() int {
+func (c Config) LogLevel() int {
 	lvl, err := strconv.Atoi(os.Getenv("LOG_LEVEL"))
 	if err != nil {
 		return 1
@@ -85,30 +91,66 @@ func (c config) LogLevel() int {
 }
 
 // APIDomain returns API domain name
-func (c config) APIDomain() string {
+func (c Config) APIDomain() string {
 	return os.Getenv("API_DOMAIN")
 }
 
 // Env returns current application environment
-func (c config) Env() string {
+func (c Config) Env() string {
 	return os.Getenv("APP_ENV")
 }
 
 // AppName returns the application name
-func (c config) AppName() string {
+func (c Config) AppName() string {
 	return os.Getenv("APP_NAME")
 }
 
 // JWTSigningKey returns JWT signing key
-func (c config) JWTSigningKey() []byte {
+func (c Config) JWTSigningKey() []byte {
 	return []byte(os.Getenv("JWT_SECRET"))
 }
 
 // JWTTTL returns JWT life time in seconds
-func (c config) JWTTTL() int64 {
+func (c Config) JWTTTL() int64 {
 	lvl, err := strconv.Atoi(os.Getenv("JWT_TTL"))
 	if err != nil {
 		return 1
 	}
 	return int64(lvl)
+}
+
+// DBLogMode determines whether the DB logging mode is enabled
+func (c Config) DBLogMode() bool {
+	mode := os.Getenv("DB_LOGGING")
+	return mode == "true"
+}
+
+// DBConnection returns db engine name, e.g.: mysql, postgres, sqlite
+func (c Config) DBConnection() string {
+	return os.Getenv("DB_CONNECTION")
+}
+
+// DBHost returns db host
+func (c Config) DBHost() string {
+	return os.Getenv("DB_HOST")
+}
+
+// DBPort returns db port
+func (c Config) DBPort() string {
+	return os.Getenv("DB_PORT")
+}
+
+// DBName returns db name
+func (c Config) DBName() string {
+	return os.Getenv("DB_DATABASE")
+}
+
+// DBUsername returns db username
+func (c Config) DBUsername() string {
+	return os.Getenv("DB_USERNAME")
+}
+
+// DBPassword returns db password
+func (c Config) DBPassword() string {
+	return os.Getenv("DB_PASSWORD")
 }
