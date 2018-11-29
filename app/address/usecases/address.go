@@ -8,6 +8,7 @@ type (
 	// AddressInteractor struct
 	AddressInteractor struct {
 		addrRepo domain.AddressRepository
+		logger   Logger
 	}
 
 	// Address structure
@@ -95,4 +96,31 @@ func (i *AddressInteractor) Delete(r *AddressID) error {
 // ForceDelete is a use case handler
 func (i *AddressInteractor) ForceDelete(r *AddressID) error {
 	return i.addrRepo.ForceDelete(r.ID)
+}
+
+// ValidationRules func returns the map with validation rules
+func (r *AddressID) ValidationRules() map[string][]string {
+	return map[string][]string{
+		"id": []string{"required"},
+	}
+}
+
+// ValidationMessages func returns map with custom validation messages
+func (r *AddressID) ValidationMessages() map[string][]string {
+	return nil
+}
+
+// ValidationRules func returns the map with validation rules
+func (r *AddressCreate) ValidationRules() map[string][]string {
+	return map[string][]string{
+		"line_1":   []string{"required", "min:5", "max:250"},
+		"city":     []string{"required", "min:2", "max:100"},
+		"country":  []string{"required", "min:3", "max:100"},
+		"zip_code": []string{"required", "min:5", "max:10"},
+	}
+}
+
+// ValidationMessages func returns map with custom validation messages
+func (r *AddressCreate) ValidationMessages() map[string][]string {
+	return nil
 }

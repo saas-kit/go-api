@@ -1,6 +1,7 @@
 module saas-kit-api
 
 require (
+	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.0
 	github.com/jmoiron/sqlx v1.2.0
